@@ -159,6 +159,7 @@ function App() {
 
     {modal === 'import' && <ImportModal onClose={() => setModal(null)} onImported={(newCollection, newSummary) => { setCollection(newCollection); setSummary(newSummary); }} />}
     {modal === 'export' && <ExportModal onClose={() => setModal(null)} />}
+      </section>
   </>;
 }
 
