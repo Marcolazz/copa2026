@@ -54,8 +54,6 @@ A página inicial mostra:
 - total repetido;
 - cards por país/seção com progresso individual.
 
-Os totalizadores do dashboard também são filtros rápidos: clique em **Tenho**, **Faltantes** ou **Repetidas** para ver somente as figurinhas daquele status. Clique em **Total geral** para ver todas as figurinhas em uma lista global.
-
 ### Controle das figurinhas
 
 Clique em um país/seção para abrir todas as figurinhas daquele grupo.

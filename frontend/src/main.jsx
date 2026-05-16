@@ -4,37 +4,6 @@ import { api } from './api.js';
 import { cardStatus, normalizeQueryCode, normalizeSearch, sectionStats } from './utils.js';
 import './styles.css';
 
-function StatCard({ label, value, tone, onClick, active, hint }) {
-  const className = `stat ${tone || ''} ${onClick ? 'clickable' : ''} ${active ? 'active' : ''}`;
-  const content = <><span>{label}</span><strong>{value}</strong>{hint && <small>{hint}</small>}</>;
-  if (onClick) {
-    return <button type="button" className={className} onClick={onClick} aria-pressed={active}>{content}</button>;
-  }
-  return <div className={className}>{content}</div>;
-}
-
-const FILTERS = {
-  all: { title: 'Todas as figurinhas', empty: 'Nenhuma figurinha cadastrada neste filtro.' },
-  owned: { title: 'Figurinhas que tenho', empty: 'Você ainda não marcou nenhuma figurinha como tenho.' },
-  missing: { title: 'Figurinhas faltantes', empty: 'Parabéns! Nenhuma figurinha faltante neste filtro.' },
-  duplicates: { title: 'Figurinhas repetidas', empty: 'Você ainda não tem figurinhas repetidas.' },
-};
-
-function shouldShowCard(quantity, filter) {
-  if (filter === 'owned') return quantity > 0;
-  if (filter === 'missing') return quantity === 0;
-  if (filter === 'duplicates') return quantity > 1;
-  return true;
-}
-
-function cardMatchesQuery(section, code, query, allSections) {
-  const normalized = normalizeSearch(query);
-  if (!normalized) return true;
-  const codeQuery = normalizeQueryCode(query, allSections);
-  const haystack = [section.code, section.namePt, section.nameEn, code].map(normalizeSearch);
-  return haystack.some((item) => item.includes(normalized) || item.includes(codeQuery));
-}
-
 function ImportModal({ onClose, onImported }) {
   const [text, setText] = useState('');
   const [preview, setPreview] = useState(null);
@@ -139,34 +108,6 @@ function SectionList({ cards, collection, query, onOpen }) {
   </div>;
 }
 
-function GlobalStickerView({ cards, collection, filter, query, onBack, onQuantity }) {
-  const visibleSections = cards.map((section) => ({
-    ...section,
-    cards: section.cards.filter((code) => shouldShowCard(collection[code] || 0, filter) && cardMatchesQuery(section, code, query, cards)),
-  })).filter((section) => section.cards.length > 0);
-  const totalVisible = visibleSections.reduce((sum, section) => sum + section.cards.length, 0);
-  const meta = FILTERS[filter] || FILTERS.all;
-
-  return <main>
-    <div className="filterHeader">
-      <div><p className="eyebrow dark">Visualização filtrada</p><h2>{meta.title}</h2><p>{totalVisible} figurinha(s) encontrada(s). Clique em uma figurinha para incrementar ou use −/clique direito para decrementar.</p></div>
-      <button className="back" onClick={onBack}>Limpar filtro</button>
-    </div>
-    {visibleSections.length === 0 && <div className="emptyState">{meta.empty}</div>}
-    {visibleSections.map((section) => <section className="globalSection" key={section.code}>
-      <div className="globalSectionHeader"><span className="badge">{section.code}</span><strong>{section.namePt}</strong><span>{section.cards.length} resultado(s)</span></div>
-      <div className="cardsGrid">
-        {section.cards.map((code) => {
-          const quantity = collection[code] || 0;
-          return <div className={`sticker ${cardStatus(quantity)}`} key={code} onClick={() => onQuantity(code, 1)} onContextMenu={(event) => { event.preventDefault(); onQuantity(code, -1); }}>
-            <strong>{code}</strong><span>{quantity === 0 ? 'Faltando' : quantity === 1 ? 'Tenho' : 'Repetida'}</span><b>{quantity}</b><button onClick={(event) => { event.stopPropagation(); onQuantity(code, -1); }}>−</button>
-          </div>;
-        })}
-      </div>
-    </section>)}
-  </main>;
-}
-
 function SectionDetail({ section, collection, onBack, onQuantity }) {
   return <main>
     <button className="back" onClick={onBack}>← Voltar</button>
@@ -189,7 +130,7 @@ function App() {
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState(null);
   const [modal, setModal] = useState(null);
-  const [dashboardFilter, setDashboardFilter] = useState(null);
+
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -207,11 +148,6 @@ function App() {
 
   const currentSection = cards.find((section) => section.code === selected);
 
-  function openDashboardFilter(filter) {
-    setSelected(null);
-    setDashboardFilter((current) => current === filter ? null : filter);
-  }
-
   return <>
     <header className="hero">
       <div><p className="eyebrow">Panini Copa do Mundo 2026</p><h1>Controle de Figurinhas</h1><p>Gerencie figurinhas faltantes, coladas e repetidas com dados locais em JSON.</p></div>
@@ -220,15 +156,7 @@ function App() {
     {error && <div className="error pageError">{error}</div>}
     <section className="dashboard">
       <StatCard label="Completo" value={`${summary.percent}%`} />
-      <StatCard label="Total geral" value={summary.total} onClick={() => openDashboardFilter('all')} active={dashboardFilter === 'all'} hint="ver todas" />
-      <StatCard label="Tenho" value={summary.owned} tone="green" onClick={() => openDashboardFilter('owned')} active={dashboardFilter === 'owned'} hint="ver tenho" />
-      <StatCard label="Faltantes" value={summary.missing} tone="red" onClick={() => openDashboardFilter('missing')} active={dashboardFilter === 'missing'} hint="ver faltantes" />
-      <StatCard label="Repetidas" value={summary.duplicates} tone="orange" onClick={() => openDashboardFilter('duplicates')} active={dashboardFilter === 'duplicates'} hint="ver repetidas" />
-    </section>
-    {currentSection ? <SectionDetail section={currentSection} collection={collection} onBack={() => setSelected(null)} onQuantity={changeQuantity} /> : <>
-      <main><div className="toolbar"><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por RSA1, RSA 01, Brasil, South Africa..." /></div></main>
-      {dashboardFilter ? <GlobalStickerView cards={cards} collection={collection} filter={dashboardFilter} query={query} onBack={() => setDashboardFilter(null)} onQuantity={changeQuantity} /> : <main><SectionList cards={cards} collection={collection} query={query} onOpen={setSelected} /></main>}
-    </>}
+
     {modal === 'import' && <ImportModal onClose={() => setModal(null)} onImported={(newCollection, newSummary) => { setCollection(newCollection); setSummary(newSummary); }} />}
     {modal === 'export' && <ExportModal onClose={() => setModal(null)} />}
   </>;
