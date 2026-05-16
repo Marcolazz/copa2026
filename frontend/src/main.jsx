@@ -4,10 +4,6 @@ import { api } from './api.js';
 import { cardStatus, normalizeQueryCode, normalizeSearch, sectionStats } from './utils.js';
 import './styles.css';
 
-function StatCard({ label, value, tone }) {
-  return <div className={`stat ${tone || ''}`}><span>{label}</span><strong>{value}</strong></div>;
-}
-
 function ImportModal({ onClose, onImported }) {
   const [text, setText] = useState('');
   const [preview, setPreview] = useState(null);
@@ -134,6 +130,7 @@ function App() {
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState(null);
   const [modal, setModal] = useState(null);
+
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -159,12 +156,7 @@ function App() {
     {error && <div className="error pageError">{error}</div>}
     <section className="dashboard">
       <StatCard label="Completo" value={`${summary.percent}%`} />
-      <StatCard label="Total geral" value={summary.total} />
-      <StatCard label="Tenho" value={summary.owned} tone="green" />
-      <StatCard label="Faltantes" value={summary.missing} tone="red" />
-      <StatCard label="Repetidas" value={summary.duplicates} tone="orange" />
-    </section>
-    {currentSection ? <SectionDetail section={currentSection} collection={collection} onBack={() => setSelected(null)} onQuantity={changeQuantity} /> : <main><div className="toolbar"><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por RSA1, RSA 01, Brasil, South Africa..." /></div><SectionList cards={cards} collection={collection} query={query} onOpen={setSelected} /></main>}
+
     {modal === 'import' && <ImportModal onClose={() => setModal(null)} onImported={(newCollection, newSummary) => { setCollection(newCollection); setSummary(newSummary); }} />}
     {modal === 'export' && <ExportModal onClose={() => setModal(null)} />}
   </>;
